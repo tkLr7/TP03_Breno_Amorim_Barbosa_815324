@@ -1,7 +1,6 @@
 public class ListaDupla 
 {
-    public static Player[] ordernar = new Player[500];
-    public static int idx = 0;
+
     public static class Player 
     {
         private int id;
@@ -115,10 +114,12 @@ public class ListaDupla
             return estadoNascimento;
         }
         
-        @Override
-        protected Player clone() throws CloneNotSupportedException
+        public Player Clone()
         {
-            return (Player) super.clone();
+              Player jogador = new Player(this.id, this.nome, this.altura, this.peso, 
+                                this.universidade, this.anoNascimento, this.cidadeNascimento,
+                                this.estadoNascimento);
+              return(jogador);
         }
     
         public void ler(String linha){              
@@ -291,20 +292,14 @@ public class ListaDupla
             }
     
 
-          public void mostrar() 
-          {
+        public void mostrar() 
+        {
             for (Celula i = primeiro.prox; i != null; i = i.prox) 
               {
                 i.jogador.imprimir();
               }
-          }
-        
-        public static void swap(int i, int j) 
-        {
-            Player temp = ordernar[i];
-            ordernar[i] = ordernar[j]; 
-            ordernar[j] = temp; 
         }
+        
         public static int compararString(String a, String b)
         {
             int retorno = 0;
@@ -315,36 +310,77 @@ public class ListaDupla
             return retorno;
         }
 
-        public static Player acharPivo()
-        {
-            int pivo = idx/2;
-            return ordernar[pivo];
-        }
-
-        public static void quicksort(int esq, int dir) {
-            int i = esq, j = dir;
-            Player pivo = acharPivo();
-            String comp = pivo.estadoNascimento + pivo.nome;
-            while (i <= j) {
-                String test1 = ordernar[i].estadoNascimento + ordernar[i].nome;
-                String test2 = ordernar[j].estadoNascimento + ordernar[j].nome;
-                while (i <= dir && compararString(test1, comp) < 0) i++;
-                while (j >= esq && compararString(test2, comp) > 0) j--;
-                if (i <= j) {
-                    swap(i, j);
-                    i++;
-                    j--;
-                }
+        private Player acharPivo(Celula esq, Celula dir){
+            for(;esq != dir && esq.prox != dir ; esq = esq.prox, dir = dir.ant);
+            return esq.jogador;
+         }
+      
+         private boolean isMenorIgual(Celula esq, Celula dir){
+            boolean resp = false;
+      
+            while(!resp && dir != this.primeiro){
+               resp = (dir == esq);
+               dir = dir.ant;
             }
-            if (esq < j)  quicksort(esq, j);
-            if (i < dir)  quicksort(i, dir);
-        }
+            return resp;
+         }
+      
+         private boolean isMenor(Celula esq, Celula dir){
+            boolean resp = false;
+            dir = dir.ant;
+            while(!resp && dir != this.primeiro && dir != null){
+               resp = (dir == esq);
+               dir = dir.ant;
+            }
+            return resp;
+         }
+      
+         private void swap(Celula i, Celula j) throws CloneNotSupportedException{
+            Player aux = i.jogador.Clone();
+            i.jogador = j.jogador.Clone();
+            j.jogador = aux;
+         }
+      
+         private void quicksort(Celula esq, Celula dir) throws CloneNotSupportedException{
+            Celula i = esq;
+            Celula j = dir;
+            Player pivo = acharPivo( i, j);
+      
+            while(isMenorIgual( i, j)){
+               while((i.jogador.getEstado().compareTo(pivo.getEstado()) < 0) ||
+                     i.jogador.getEstado().compareTo(pivo.getEstado()) == 0 &&
+                     i.jogador.getNome().compareTo(pivo.getNome()) < 0){
+                  i = i.prox;
+               }
+      
+               while((j.jogador.getEstado().compareTo(pivo.getEstado()) > 0) ||
+               j.jogador.getEstado().compareTo(pivo.getEstado()) == 0 &&
+               j.jogador.getNome().compareTo(pivo.getNome()) > 0){
+                  j = j.ant;
+               }
+               if(isMenorIgual( i, j)){
+                  swap(i, j);
+                  i = i.prox;
+                  j = j.ant;
+               }
+            }
+      
+            if(isMenor(esq, j))
+               quicksort(esq, j);
+      
+            if(isMenor(i, dir))
+               quicksort(i,dir);
+         }
+      
+         public void quicksort() throws CloneNotSupportedException{
+            quicksort(primeiro.prox, ultimo);
+         }
     public static void main (String[] args) throws NumberFormatException, Exception
     {
       Player[] jogador = new Player[3923];
       ListaDupla fila = new ListaDupla();
      
-      Arq.openRead("players.csv");
+      Arq.openRead("/tmp/players.csv");
     
       String info = "";
       Arq.readLine();
@@ -364,7 +400,7 @@ public class ListaDupla
       }
       Arq.close();
     
-        
+      int idx = 0;
       String id = MyIO.readLine();
       while (!id.equals("FIM"))
       {
@@ -372,7 +408,7 @@ public class ListaDupla
         {
           if (jogador[i] != null && jogador[i].getId() == Integer.parseInt(id)) 
           {
-            ordernar[idx]=jogador[i];
+            fila.inserir(jogador[i], idx);
             break; 
           }
         }
@@ -380,13 +416,7 @@ public class ListaDupla
         idx++;
       }
 
-      quicksort(0, idx-1);
-
-      for (int i = 0; i < ordernar.length; i++) 
-      {
-        fila.inserir(ordernar[i], i);
-      }
-    
+      fila.quicksort();
       fila.mostrar();
     }     
 }

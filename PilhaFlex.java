@@ -1,6 +1,3 @@
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PilhaFlex {
     private int id;
@@ -11,8 +8,6 @@ public class PilhaFlex {
     private int anoNascimento;
     private String cidadeNascimento;
     private String estadoNascimento;
-
-    static List<PilhaFlex> players = new ArrayList<>();
 
     PilhaFlex()
     {
@@ -162,22 +157,75 @@ public class PilhaFlex {
         MyIO.print("["+i+"] ## "+nome+" ## "+altura+" ## "+peso+" ## "+anoNascimento+" ## "+universidade+" ## "+cidadeNascimento+" ## "+estadoNascimento+" ##\n");
     }
 
-    public static void inserirFim(PilhaFlex jogador)
-    {
-        players.add(jogador);
+    
+    static class Celula {
+        public PilhaFlex jogador; // Elemento inserido na celula.
+        public Celula prox; // Aponta a celula prox.
+    
+        public Celula() {
+            this(null);
+        }
+    
+        public Celula(PilhaFlex jogador) {
+          this.jogador = jogador;
+          this.prox = null;
+        }
+        
+        public int RMostrar(int mostrar)
+        {
+            int saida = 0;
+            if (this.prox != null)
+            {
+                saida = this.prox.RMostrar(saida);
+            }
+            this.jogador.imprimir(saida);
+            saida++;
+            return saida;
+        }
     }
     
-    public static PilhaFlex removerFim()
-    {
-        PilhaFlex retorno = players.get(players.size() - 1);
-        players.remove(players.size() - 1);
-        return retorno;
-    }   
+
+    public static class Pilha {
+        private Celula topo;
     
-public static void main (String[] args) throws IOException
+        public Pilha() {
+            topo = null;
+        }
+
+        public void inserir(PilhaFlex jogador) {
+            Celula tmp = new Celula(jogador);
+            tmp.prox = topo;
+            topo = tmp;
+            tmp = null;
+        }
+    
+
+        public PilhaFlex remover() throws Exception {
+            if (topo == null) {
+                throw new Exception("Erro ao remover!");
+            }
+            PilhaFlex resp = topo.jogador;
+            Celula tmp = topo;
+            topo = topo.prox;
+            tmp.prox = null;
+            tmp = null;
+            return resp;
+        }
+        
+        public void mostrar() {
+            int x = 0;
+            Celula i = topo;
+
+            i.RMostrar(x);
+        }
+
+    
+    }
+public static void main (String[] args) throws Exception
 {
 
     PilhaFlex[] jogador = new PilhaFlex[3923];
+    Pilha pilha = new Pilha();
  
     Arq.openRead("/tmp/players.csv");
 
@@ -207,7 +255,8 @@ public static void main (String[] args) throws IOException
         {
             if (jogador[i] != null && jogador[i].getId() == Integer.parseInt(id)) 
             {
-                players.add(jogador[i]);
+               pilha.inserir(jogador[i]);
+               break;
             }
         }
         id = MyIO.readLine();
@@ -226,22 +275,18 @@ public static void main (String[] args) throws IOException
             {
                 if (jogador[i] != null && jogador[i].getId() == Integer.parseInt(idtest)) 
                 {
-                    inserirFim(jogador[i]);
+                    pilha.inserir(jogador[i]);
+                    break;
                 }
             }
         }
         else if (primeiro == 'R') 
         {
-            PilhaFlex show = removerFim();
+            PilhaFlex show = pilha.remover();
             MyIO.println("(R) "+show.nome);
         }
         aux++;
     }
-    int marcador = 0;
-    for(PilhaFlex player : players)
-    {
-        player.imprimir(marcador);
-        marcador++;
-    }
+    pilha.mostrar();
 }  
 }
